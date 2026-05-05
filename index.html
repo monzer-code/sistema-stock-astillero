@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Stock Náutica Facu</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; padding: 20px; }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; text-align: center; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { background-color: #3498db; color: white; padding: 12px; text-align: left; }
+        td { padding: 12px; border-bottom: 1px solid #ddd; }
+        tr:hover { background-color: #f1f1f1; }
+        .card { flex: 1; color: white; padding: 15px; border-radius: 8px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📦 Control de Stock - Taller Naval</h1>
+
+        <!-- Tarjetas de Totales -->
+        <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+            <div class="card" style="background: #3498db;">
+                <h4 style="margin: 0;">Total de Productos</h4>
+                <p id="total-productos" style="font-size: 24px; font-weight: bold; margin: 10px 0;">0</p>
+            </div>
+            <div class="card" style="background: #27ae60;">
+                <h4 style="margin: 0;">Valor del Inventario</h4>
+                <p id="valor-total" style="font-size: 24px; font-weight: bold; margin: 10px 0;">$0</p>
+            </div>
+        </div>
+
+        <!-- Formulario de Carga -->
+        <div style="background: #ecf0f1; padding: 20px; border-radius: 8px; margin: 20px 0; display: flex; gap: 10px; flex-wrap: wrap;">
+            <input type="text" id="nombre" placeholder="Material">
+            <input type="text" id="categoria" placeholder="Categoría">
+            <input type="number" id="cantidad" placeholder="Cant.">
+            <input type="number" id="precio" placeholder="Precio">
+            <button onclick="enviarDatos()" style="background: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">+ Cargar Material</button>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Material</th>
+                    <th>Categoría</th>
+                    <th>Cant.</th>
+     <th>Precio Unit.</th>
+   <th>Acción</th>
+ </tr>
+                </tr>
+            </thead>
+            <tbody id="tabla-cuerpo"></tbody>
+        </table>
+    </div>
+
+    <script>
+        // Función para cargar la tabla y los totales al abrir la página
+        function cargarTabla() {
+            fetch('/ver-stock')
+                .then(res => res.json())
+                .then(data => {
+                    const tabla = document.getElementById('tabla-cuerpo');
+                    tabla.innerHTML = ""; // Limpiar tabla
+                    let totalItems = 0;
+                    let valorInversion = 0;
+
+                    data.forEach(p => {
+                        totalItems += p.cantidad;
+                        valorInversion += (p.cantidad * p.precio);
+
+                        const fila = `<tr>
+                            <td>${p.id}</td>
+                            <td>${p.nombre}</td>
+                            <td>${p.categoria}</td>
+                            <td>${p.cantidad}</td>
+                            <td>$${p.precio}</td>
+                            <td>
+    <button onclick="borrarProducto(${p.id})" style="background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Eliminar</button>
+</td>
+                        </tr>`;
+                        tabla.innerHTML += fila;
+                    });
+
+                    document.getElementById('total-productos').innerText = totalItems;
+                    document.getElementById('valor-total').innerText = '$' + valorInversion.toLocaleString();
+                });
+        }
+
+        // Función para enviar datos nuevos
+        function enviarDatos() {
+            const nombre = document.getElementById('nombre').value;
+            const categoria = document.getElementById('categoria').value;
+            const cantidad = document.getElementById('cantidad').value;
+            const precio = document.getElementById('precio').value;
+
+            if(!nombre || !cantidad || !precio) {
+                alert("Facu, completá los datos.");
+                return;
+            }
+
+            fetch(`/cargar-producto?nombre=${nombre}&categoria=${categoria}&cantidad=${cantidad}&precio=${precio}`, {
+                method: 'POST'
+            }).then(() => {
+                location.reload();
+            });
+        }
+
+        // Ejecutar carga apenas abre
+        cargarTabla();
+        function borrarProducto(id) {
+    if(confirm("¿Seguro que querés borrar este material?")) {
+        fetch(`/borrar-producto/${id}`, {
+            method: 'DELETE'
+        }).then(() => {
+            location.reload();
+        });
+    }
+}
+    </script>
+</body>
+</html>
